@@ -14,6 +14,14 @@ const Products = () => {
   const [stock, setStock] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => {
+      setToast(null);
+    }, 2500);
+  };
 
   useEffect(() => {
     const unsub = subscribeToProducts((data) => {
@@ -55,6 +63,12 @@ const Products = () => {
         </div>
       </div>
 
+      {toast && (
+        <div className="fixed bottom-24 right-4 bg-success text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+          {toast}
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-6">
         <div className="glass-card flex flex-col h-fit">
           <h2 className="text-xl mb-4 font-semibold flex items-center gap-2">
@@ -94,6 +108,7 @@ const Products = () => {
               <div className="mb-4">
                 <BarcodeScanner onScan={(scannedBarcode) => {
                   setBarcode(scannedBarcode);
+                  showToast('Barcode scanned successfully!');
                   setIsScanning(false);
                 }} />
               </div>

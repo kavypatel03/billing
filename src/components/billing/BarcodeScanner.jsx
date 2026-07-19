@@ -122,17 +122,20 @@ const BarcodeScanner = ({ onScan }) => {
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Beep frequency
+    // High-pitched, sharp supermarket beep
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(2200, audioContext.currentTime);
     
-    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    // Very quick attack and decay for crisp sound
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.08);
     
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
     oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.1);
+    oscillator.stop(audioContext.currentTime + 0.09);
   };
 
   return (
