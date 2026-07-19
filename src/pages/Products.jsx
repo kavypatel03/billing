@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { subscribeToProducts, addProduct } from '../services/firebaseService';
+import { subscribeToProducts, addProduct, updateProduct } from '../services/firebaseService';
 import { Plus, Package } from 'lucide-react';
 import BarcodeScanner from '../components/billing/BarcodeScanner';
 
@@ -15,12 +15,31 @@ const Products = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [toast, setToast] = useState(null);
+  const [existingProduct, setExistingProduct] = useState(null);
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => {
       setToast(null);
     }, 2500);
+  };
+
+  const handleBarcodeChange = (newBarcode) => {
+    setBarcode(newBarcode);
+    const found = products.find(p => p.barcode === newBarcode);
+    if (found) {
+      setExistingProduct(found);
+      setProductName(found.productName);
+      setPrice(found.price.toString());
+      setStock(''); // Clear stock so they input the quantity to ADD
+    } else {
+      if (existingProduct) {
+        setExistingProduct(null);
+        setProductName('');
+        setPrice('');
+        setStock('');
+      }
+    }
   };
 
   useEffect(() => {
@@ -36,21 +55,47 @@ const Products = () => {
     if (!productName || !barcode || !price || !stock) return;
     
     setIsSubmitting(true);
-    const result = await addProduct({
-      productName,
-      barcode,
-      price: Number(price),
-      stock: Number(stock)
-    });
     
-    if (result.success) {
-      setProductName('');
-      setBarcode('');
-      setPrice('');
-      setStock('');
+    if (existingProduct) {
+      // Update existing product stock and details
+      const newStockTotal = Number(existingProduct.stock) + Number(stock);
+      const result = await updateProduct(existingProduct.id, {
+        productName,
+        barcode,
+        price: Number(price),
+        stock: newStockTotal
+      });
+      
+      if (result.success) {
+        showToast(`Stock updated for ${productName}!`);
+        setProductName('');
+        setBarcode('');
+        setPrice('');
+        setStock('');
+        setExistingProduct(null);
+      } else {
+        alert(result.error);
+      }
     } else {
-      alert(result.error);
+      // Add new product
+      const result = await addProduct({
+        productName,
+        barcode,
+        price: Number(price),
+        stock: Number(stock)
+      });
+      
+      if (result.success) {
+        showToast(`${productName} added to inventory!`);
+        setProductName('');
+        setBarcode('');
+        setPrice('');
+        setStock('');
+      } else {
+        alert(result.error);
+      }
     }
+    
     setIsSubmitting(false);
   };
 
@@ -72,7 +117,8 @@ const Products = () => {
       <div className="grid grid-cols-3 gap-6">
         <div className="glass-card flex flex-col h-fit">
           <h2 className="text-xl mb-4 font-semibold flex items-center gap-2">
-            <Plus size={20} className="text-primary" /> Add New Product
+            <Plus size={20} className={existingProduct ? 'text-success' : 'text-primary'} /> 
+            {existingProduct ? 'Update Stock / Details' : 'Add New Product'}
           </h2>
           <form onSubmit={handleAddProduct} className="flex flex-col gap-2">
             <div className="input-group">
@@ -92,7 +138,7 @@ const Products = () => {
                   type="text" 
                   className="input-field flex-1" 
                   value={barcode} 
-                  onChange={(e) => setBarcode(e.target.value)} 
+                  onChange={(e) => handleBarcodeChange(e.target.value)} 
                   required 
                 />
                 <button 
@@ -107,7 +153,7 @@ const Products = () => {
             {isScanning && (
               <div className="mb-4">
                 <BarcodeScanner onScan={(scannedBarcode) => {
-                  setBarcode(scannedBarcode);
+                  handleBarcodeChange(scannedBarcode);
                   showToast('Barcode scanned successfully!');
                   setIsScanning(false);
                 }} />
@@ -127,7 +173,9 @@ const Products = () => {
                 />
               </div>
               <div className="input-group">
-                <label className="input-label">Stock Quantity</label>
+                <label className="input-label">
+                  {existingProduct ? `Add Quantity (Current: ${existingProduct.stock})` : 'Stock Quantity'}
+                </label>
                 <input 
                   type="number" 
                   min="0"
@@ -140,10 +188,10 @@ const Products = () => {
             </div>
             <button 
               type="submit" 
-              className="btn btn-primary mt-4" 
+              className={`btn mt-4 ${existingProduct ? 'btn-success' : 'btn-primary'}`} 
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : 'Save Product'}
+              {isSubmitting ? 'Processing...' : existingProduct ? 'Update Stock' : 'Save Product'}
             </button>
           </form>
         </div>
