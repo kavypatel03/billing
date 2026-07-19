@@ -55,45 +55,37 @@ const BillingHistory = () => {
         {loading ? (
           <div className="text-muted">Loading history...</div>
         ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Bill Number</th>
-                  <th>Date & Time</th>
-                  <th>Total Items</th>
-                  <th>Total Amount</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="flex-1 overflow-y-auto min-h-[300px]">
+            {filteredBills.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted p-8 text-center bg-surface border border-border rounded-lg">
+                No bills found.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
                 {filteredBills.map(b => {
                   const date = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString() : 'N/A';
                   return (
-                    <tr key={b.id}>
-                      <td className="font-semibold">{b.billNumber}</td>
-                      <td className="text-muted">{date}</td>
-                      <td>{b.totalItems}</td>
-                      <td className="font-bold text-success">₹{Number(b.totalAmount).toFixed(2)}</td>
-                      <td>
-                        <span className="badge badge-success">{b.paymentStatus || 'Paid'}</span>
-                      </td>
-                      <td>
-                        <button className="btn btn-ghost text-sm py-1 px-3">View Details</button>
-                      </td>
-                    </tr>
+                    <div key={b.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 bg-bg-surface-hover rounded-lg border border-border gap-4 transition-colors hover:bg-border/50">
+                      <div className="flex-1">
+                        <div className="font-semibold text-lg">{b.billNumber}</div>
+                        <div className="text-sm text-muted">{date}</div>
+                        <div className="text-sm text-muted mt-1">Items: {b.totalItems}</div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
+                        <div className="flex flex-col sm:items-end">
+                          <span className="font-bold text-success text-lg">₹{Number(b.totalAmount).toFixed(2)}</span>
+                          <span className="badge badge-success mt-1 self-start sm:self-end">{b.paymentStatus || 'Paid'}</span>
+                        </div>
+                        <button className="btn btn-ghost text-sm py-2 px-3 border border-border">
+                          Details
+                        </button>
+                      </div>
+                    </div>
                   )
                 })}
-                {filteredBills.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted py-8">
-                      No bills found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
         )}
       </div>

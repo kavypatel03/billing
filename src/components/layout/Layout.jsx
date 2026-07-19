@@ -16,7 +16,7 @@ const Layout = () => {
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             <LayoutDashboard size={24} />
-            <span className="nav-label">Dashboard</span>
+            <span className="nav-label">Home</span>
           </NavLink>
           <NavLink 
             to="/billing" 

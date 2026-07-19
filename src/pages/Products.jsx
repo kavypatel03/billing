@@ -140,44 +140,41 @@ const Products = () => {
           {loading ? (
             <div className="text-muted">Loading products...</div>
           ) : (
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product Name</th>
-                    <th>Barcode</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="flex-1 overflow-y-auto min-h-[300px]">
+              {products.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted p-8 text-center bg-surface border border-border rounded-lg">
+                  No products found. Add some products to get started.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
                   {products.map(p => (
-                    <tr key={p.id}>
-                      <td className="font-medium">{p.productName}</td>
-                      <td className="text-muted font-mono">{p.barcode}</td>
-                      <td>₹{Number(p.price).toFixed(2)}</td>
-                      <td>{p.stock}</td>
-                      <td>
-                        {p.stock > 10 ? (
-                          <span className="badge badge-success">In Stock</span>
-                        ) : p.stock > 0 ? (
-                          <span className="badge badge-danger">Low Stock</span>
-                        ) : (
-                          <span className="badge badge-danger" style={{opacity: 0.5}}>Out of Stock</span>
-                        )}
-                      </td>
-                    </tr>
+                    <div key={p.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 bg-bg-surface-hover rounded-lg border border-border gap-3 transition-colors hover:bg-border/50">
+                      <div className="flex-1">
+                        <div className="font-semibold text-lg">{p.productName}</div>
+                        <div className="text-sm text-muted font-mono">{p.barcode}</div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                        <div className="text-lg font-medium w-24 sm:text-right">
+                          ₹{Number(p.price).toFixed(2)}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-muted text-sm w-16 text-right">Qty: {p.stock}</div>
+                          <div className="w-24 text-right">
+                            {p.stock > 10 ? (
+                              <span className="badge badge-success">In Stock</span>
+                            ) : p.stock > 0 ? (
+                              <span className="badge badge-danger">Low Stock</span>
+                            ) : (
+                              <span className="badge badge-danger" style={{opacity: 0.5}}>Out of Stock</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                  {products.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="text-center text-muted py-8">
-                        No products found. Add some products to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           )}
         </div>

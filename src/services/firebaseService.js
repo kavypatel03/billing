@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  increment
+  increment,
+  setDoc
 } from "firebase/firestore";
 
 // Listen to all products
@@ -38,11 +39,14 @@ export const subscribeToBills = (callback) => {
 // Add a single product
 export const addProduct = async (productData) => {
   try {
-    const docRef = await addDoc(collection(db, "products"), {
+    const docRef = doc(collection(db, "products"));
+    // Fire and forget (optimistic UI)
+    setDoc(docRef, {
       ...productData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    }).catch(err => console.error("Background error adding product:", err));
+    
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error("Error adding product: ", error);
@@ -54,10 +58,10 @@ export const addProduct = async (productData) => {
 export const updateProduct = async (id, data) => {
   try {
     const productRef = doc(db, "products", id);
-    await updateDoc(productRef, {
+    updateDoc(productRef, {
       ...data,
       updatedAt: serverTimestamp()
-    });
+    }).catch(err => console.error("Background error updating product:", err));
     return { success: true };
   } catch (error) {
     console.error("Error updating product: ", error);
@@ -68,7 +72,7 @@ export const updateProduct = async (id, data) => {
 // Delete a product
 export const deleteProduct = async (id) => {
   try {
-    await deleteDoc(doc(db, "products", id));
+    deleteDoc(doc(db, "products", id)).catch(err => console.error("Background error deleting product:", err));
     return { success: true };
   } catch (error) {
     console.error("Error deleting product: ", error);
@@ -79,7 +83,8 @@ export const deleteProduct = async (id) => {
 // Process payment (Stock decrease + Bill creation)
 export const processPayment = async (cartItems, totalAmount) => {
   try {
-    // Step 1: Create the bill first
+    // Step 1: Create the bill
+    const billRef = doc(collection(db, "bills"));
     const billData = {
       billNumber: `BILL-${Date.now()}`,
       createdAt: serverTimestamp(),
@@ -89,22 +94,23 @@ export const processPayment = async (cartItems, totalAmount) => {
       products: cartItems.map(item => ({
         productId: item.productId,
         productName: item.productName,
-        barcode: item.barcode,
+        barcode: item.barcode || '',
         quantity: item.quantity,
         price: item.price,
         subtotal: item.subtotal
       }))
     };
     
-    await addDoc(collection(db, "bills"), billData);
+    // Fire and forget
+    setDoc(billRef, billData).catch(err => console.error("Background error saving bill:", err));
 
-    // Step 2: Decrease stock for each item using atomic increment
+    // Step 2: Decrease stock for each item
     for (const item of cartItems) {
       const productRef = doc(db, "products", item.productId);
-      await updateDoc(productRef, { 
+      updateDoc(productRef, { 
         stock: increment(-item.quantity),
         updatedAt: serverTimestamp()
-      });
+      }).catch(err => console.error("Background error updating stock:", err));
     }
 
     return { success: true, bill: billData };

@@ -26,6 +26,12 @@ const BarcodeScanner = ({ onScan }) => {
     }).catch(err => console.error("Error getting cameras", err));
   }, []);
 
+  const onScanRef = useRef(onScan);
+  
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+
   // Handle scanning when activeCameraId is set
   useEffect(() => {
     if (!activeCameraId) return;
@@ -44,7 +50,7 @@ const BarcodeScanner = ({ onScan }) => {
             if (now - lastScanTime.current > 500) {
               lastScanTime.current = now;
               playBeep();
-              onScan(decodedText);
+              onScanRef.current(decodedText);
             }
           },
           () => {} // Ignore continuous errors
@@ -71,7 +77,7 @@ const BarcodeScanner = ({ onScan }) => {
         }).catch(err => console.error(err));
       }
     };
-  }, [activeCameraId, onScan]);
+  }, [activeCameraId]);
 
   const handleSwitchCamera = () => {
     if (cameras.length <= 1) return;
