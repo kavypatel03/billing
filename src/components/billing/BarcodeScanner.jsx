@@ -15,9 +15,30 @@ const BarcodeScanner = ({ onScan }) => {
       scannerRef.current = html5QrCode;
       
       try {
+        let cameraIdToUse;
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          // Try to find standard back camera (avoiding ultra-wide if possible)
+          const backCameras = devices.filter(d => d.label.toLowerCase().includes('back'));
+          
+          if (backCameras.length > 0) {
+            // Often, the first back camera is the primary one. 
+            // In some devices it's the last. We'll pick the first one that doesn't explicitly say "ultra"
+            const primaryBack = backCameras.find(d => !d.label.toLowerCase().includes('ultra')) || backCameras[0];
+            cameraIdToUse = primaryBack.id;
+          } else {
+            cameraIdToUse = devices[0].id; // Fallback to first camera
+          }
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        
+        // If we found a specific camera ID, use it, otherwise fallback to environment
+        const startParams = cameraIdToUse ? cameraIdToUse : { facingMode: "environment" };
+
         await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 150 } },
+          startParams,
+          config,
           (decodedText) => {
             const now = Date.now();
             if (now - lastScanTime.current > 500) {
