@@ -9,7 +9,8 @@ import {
   deleteDoc,
   serverTimestamp,
   query,
-  orderBy
+  orderBy,
+  increment
 } from "firebase/firestore";
 
 // Listen to all products
@@ -75,65 +76,40 @@ export const deleteProduct = async (id) => {
   }
 };
 
-// Process payment (Stock decrease + Bill creation in transaction)
+// Process payment (Stock decrease + Bill creation)
 export const processPayment = async (cartItems, totalAmount) => {
   try {
-    const result = await runTransaction(db, async (transaction) => {
-      const productDocs = [];
-      
-      // Step 1: Read all product stocks (must read before writing in transaction)
-      for (const item of cartItems) {
-        const productRef = doc(db, "products", item.productId);
-        const productSnap = await transaction.get(productRef);
-        
-        if (!productSnap.exists()) {
-          throw new Error(`Product ${item.productName} does not exist!`);
-        }
-        
-        const currentStock = productSnap.data().stock;
-        if (currentStock < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.productName}. Available: ${currentStock}`);
-        }
-        
-        productDocs.push({
-          ref: productRef,
-          newStock: currentStock - item.quantity
-        });
-      }
+    // Step 1: Create the bill first
+    const billData = {
+      billNumber: `BILL-${Date.now()}`,
+      createdAt: serverTimestamp(),
+      totalAmount,
+      totalItems: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+      paymentStatus: "Paid",
+      products: cartItems.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        barcode: item.barcode,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal
+      }))
+    };
+    
+    await addDoc(collection(db, "bills"), billData);
 
-      // Step 2: Write all stock updates
-      productDocs.forEach((docData) => {
-        transaction.update(docData.ref, { 
-          stock: docData.newStock,
-          updatedAt: serverTimestamp()
-        });
+    // Step 2: Decrease stock for each item using atomic increment
+    for (const item of cartItems) {
+      const productRef = doc(db, "products", item.productId);
+      await updateDoc(productRef, { 
+        stock: increment(-item.quantity),
+        updatedAt: serverTimestamp()
       });
+    }
 
-      // Step 3: Create the bill
-      const billRef = doc(collection(db, "bills"));
-      const billData = {
-        billNumber: `BILL-${Date.now()}`,
-        createdAt: serverTimestamp(),
-        totalAmount,
-        totalItems: cartItems.reduce((acc, item) => acc + item.quantity, 0),
-        paymentStatus: "Paid",
-        products: cartItems.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          barcode: item.barcode,
-          quantity: item.quantity,
-          price: item.price,
-          subtotal: item.subtotal
-        }))
-      };
-      
-      transaction.set(billRef, billData);
-      return billData;
-    });
-
-    return { success: true, bill: result };
+    return { success: true, bill: billData };
   } catch (error) {
-    console.error("Transaction failed: ", error);
+    console.error("Payment failed: ", error);
     return { success: false, error: error.message };
   }
 };

@@ -8,6 +8,7 @@ const Billing = () => {
   const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
+  const [toast, setToast] = useState(null);
   
   // Manual entry state
   const [searchBarcode, setSearchBarcode] = useState('');
@@ -36,12 +37,12 @@ const Billing = () => {
       const existingItem = prevCart.find(item => item.productId === product.id);
       
       if (existingItem) {
-        // Check if adding one more exceeds stock
         if (existingItem.quantity + 1 > product.stock) {
           setMessage({ type: 'error', text: `Not enough stock for ${product.productName}. Max available: ${product.stock}` });
           return prevCart;
         }
         
+        showToast(`Added another ${product.productName}`);
         return prevCart.map(item => 
           item.productId === product.id 
             ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
@@ -53,6 +54,7 @@ const Billing = () => {
           return prevCart;
         }
         
+        showToast(`${product.productName} scanned & added!`);
         return [...prevCart, {
           productId: product.id,
           productName: product.productName,
@@ -63,6 +65,13 @@ const Billing = () => {
         }];
       }
     });
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => {
+      setToast(null);
+    }, 2500);
   };
 
   const handleManualAdd = (e) => {
@@ -127,7 +136,14 @@ const Billing = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6 h-full">
+      {/* Global Toast */}
+      {toast && (
+        <div className="fixed bottom-24 right-4 bg-success text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+          {toast}
+        </div>
+      )}
+
+      <div className="flex flex-col md:grid md:grid-cols-3 gap-6 h-full">
         {/* Scanner & Manual Entry */}
         <div className="flex flex-col gap-6">
           <div className="glass-card flex flex-col items-center">
@@ -160,54 +176,43 @@ const Billing = () => {
           
           <div className="flex-1 overflow-y-auto mb-4 border border-border rounded-lg bg-surface min-h-[300px]">
             {cart.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-muted p-8">
+              <div className="flex items-center justify-center h-full text-muted p-8 text-center">
                 Cart is empty. Scan products to add.
               </div>
             ) : (
-              <table className="w-full">
-                <thead className="sticky top-0 bg-surface">
-                  <tr>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>Qty</th>
-                    <th>Subtotal</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.map(item => (
-                    <tr key={item.productId}>
-                      <td className="font-medium">
-                        <div>{item.productName}</div>
-                        <div className="text-xs text-muted font-mono">{item.barcode}</div>
-                      </td>
-                      <td>₹{item.price.toFixed(2)}</td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <button 
-                            className="w-6 h-6 rounded bg-bg-surface-hover flex items-center justify-center hover:bg-border"
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          >-</button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <button 
-                            className="w-6 h-6 rounded bg-bg-surface-hover flex items-center justify-center hover:bg-border"
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          >+</button>
-                        </div>
-                      </td>
-                      <td className="font-semibold">₹{item.subtotal.toFixed(2)}</td>
-                      <td>
+              <div className="flex flex-col gap-2 p-2">
+                {cart.map(item => (
+                  <div key={item.productId} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 bg-bg-surface-hover rounded-lg border border-border gap-4">
+                    <div className="flex-1">
+                      <div className="font-medium text-lg">{item.productName}</div>
+                      <div className="text-sm text-muted">₹{item.price.toFixed(2)} x {item.quantity}</div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
+                      <div className="flex items-center gap-1 bg-bg-color rounded-lg p-1 border border-border">
                         <button 
-                          onClick={() => removeFromCart(item.productId)}
-                          className="p-2 text-danger hover:bg-danger/10 rounded"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          className="w-8 h-8 rounded bg-bg-surface flex items-center justify-center hover:bg-border active:scale-95"
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        >-</button>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <button 
+                          className="w-8 h-8 rounded bg-bg-surface flex items-center justify-center hover:bg-border active:scale-95"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        >+</button>
+                      </div>
+                      <div className="font-bold text-lg min-w-[80px] text-right">
+                        ₹{item.subtotal.toFixed(2)}
+                      </div>
+                      <button 
+                        onClick={() => removeFromCart(item.productId)}
+                        className="text-danger p-2 hover:bg-danger/10 rounded-lg active:scale-95"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
