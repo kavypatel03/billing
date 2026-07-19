@@ -75,7 +75,7 @@ const BarcodeScanner = ({ onScan }) => {
           { fps: 10, qrbox: { width: 250, height: 150 } },
           (decodedText) => {
             const now = Date.now();
-            if (now - lastScanTime.current > 500) {
+            if (now - lastScanTime.current > 1000) {
               lastScanTime.current = now;
               playBeep();
               onScanRef.current(decodedText);

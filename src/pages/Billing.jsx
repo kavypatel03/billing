@@ -33,50 +33,36 @@ const Billing = () => {
   };
 
   const addToCart = (product) => {
-    let outOfStockError = null;
-    let successMessage = null;
-
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.productId === product.id);
+    const existingItem = cart.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      if (existingItem.quantity + 1 > product.stock) {
+        setMessage({ type: 'error', text: `Not enough stock for ${product.productName}. Max available: ${product.stock}` });
+        return;
+      }
       
-      if (existingItem) {
-        if (existingItem.quantity + 1 > product.stock) {
-          outOfStockError = `Not enough stock for ${product.productName}. Max available: ${product.stock}`;
-          return prevCart;
-        }
-        
-        successMessage = `Added another ${product.productName}`;
-        return prevCart.map(item => 
-          item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
-            : item
-        );
-      } else {
-        if (product.stock < 1) {
-          outOfStockError = `Product ${product.productName} is out of stock.`;
-          return prevCart;
-        }
-        
-        successMessage = `${product.productName} scanned & added!`;
-        return [...prevCart, {
-          productId: product.id,
-          productName: product.productName,
-          barcode: product.barcode,
-          price: product.price,
-          quantity: 1,
-          subtotal: product.price
-        }];
+      setCart(prevCart => prevCart.map(item => 
+        item.productId === product.id 
+          ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * product.price }
+          : item
+      ));
+      showToast(`Added another ${product.productName}`);
+    } else {
+      if (product.stock < 1) {
+        setMessage({ type: 'error', text: `Product ${product.productName} is out of stock.` });
+        return;
       }
-    });
-
-    // Handle side-effects after state update calculation
-    setTimeout(() => {
-      if (outOfStockError) {
-        setMessage({ type: 'error', text: outOfStockError });
-      } else if (successMessage) {
-        showToast(successMessage);
-      }
-    }, 0);
+      
+      setCart(prevCart => [...prevCart, {
+        productId: product.id,
+        productName: product.productName,
+        barcode: product.barcode,
+        price: product.price,
+        quantity: 1,
+        subtotal: product.price
+      }]);
+      showToast(`${product.productName} scanned & added!`);
+    }
   };
 
   const showToast = (msg) => {
