@@ -4,38 +4,47 @@ import { Html5Qrcode } from 'html5-qrcode';
 const BarcodeScanner = ({ onScan }) => {
   const scannerRef = useRef(null);
   const lastScanTime = useRef(0);
+  const scannerIdRef = useRef(`reader-${Math.random().toString(36).substring(7)}`);
 
   useEffect(() => {
-    const html5QrCode = new Html5Qrcode("reader");
-    scannerRef.current = html5QrCode;
+    let html5QrCode;
+    let isComponentMounted = true;
 
-    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-    
-    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-      const now = Date.now();
-      // 500ms debounce
-      if (now - lastScanTime.current > 500) {
-        lastScanTime.current = now;
-        playBeep();
-        onScan(decodedText);
+    const initScanner = async () => {
+      html5QrCode = new Html5Qrcode(scannerIdRef.current);
+      scannerRef.current = html5QrCode;
+      
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (decodedText) => {
+            const now = Date.now();
+            if (now - lastScanTime.current > 500) {
+              lastScanTime.current = now;
+              playBeep();
+              onScan(decodedText);
+            }
+          },
+          () => {} // Ignore continuous errors
+        );
+
+        if (!isComponentMounted && html5QrCode.isScanning) {
+          await html5QrCode.stop();
+          html5QrCode.clear();
+        }
+      } catch (err) {
+        if (isComponentMounted) {
+          console.error("Error starting scanner: ", err);
+        }
       }
     };
 
-    const qrCodeErrorCallback = (errorMessage) => {
-      // Ignore background errors during continuous scanning
-    };
-
-    html5QrCode.start(
-      { facingMode: "environment" },
-      config,
-      qrCodeSuccessCallback,
-      qrCodeErrorCallback
-    ).catch(err => {
-      console.error("Error starting scanner: ", err);
-    });
+    initScanner();
 
     return () => {
-      if (html5QrCode.isScanning) {
+      isComponentMounted = false;
+      if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().then(() => {
           html5QrCode.clear();
         }).catch(err => console.error(err));
@@ -63,7 +72,7 @@ const BarcodeScanner = ({ onScan }) => {
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <div id="reader" className="w-full max-w-sm rounded-lg overflow-hidden border border-border"></div>
+      <div id={scannerIdRef.current} className="w-full max-w-sm rounded-lg overflow-hidden border border-border"></div>
       <p className="text-sm text-muted mt-2">Camera is active. Point at barcode to scan.</p>
     </div>
   );

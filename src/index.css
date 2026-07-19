@@ -230,52 +230,68 @@ tr:hover td {
 /* Layout */
 .app-container {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
-.sidebar {
-  width: 260px;
-  background-color: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-}
-.sidebar-logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 2rem;
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  border-radius: var(--radius);
-  transition: all 0.2s;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-.nav-link:hover {
-  background-color: var(--bg-surface-hover);
-  color: var(--text-main);
-}
-.nav-link.active {
-  background-color: var(--primary);
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
-}
+
 .main-content {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 120px; /* Space for the bottom island */
+}
+
+.bottom-island-container {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* Allows clicking through empty space */
+  z-index: 50;
+}
+
+.bottom-island {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 9999px; /* Pill shape */
+  pointer-events: auto; /* Re-enable pointer events for the menu */
+  box-shadow: var(--shadow-lg);
+}
+
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: 9999px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.nav-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.nav-link:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-main);
+}
+
+.nav-link.active {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
 }
 .page-header {
   margin-bottom: 2rem;

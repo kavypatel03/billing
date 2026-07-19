@@ -5,47 +5,42 @@ import { LayoutDashboard, ShoppingCart, Package, ReceiptText, Store } from 'luci
 const Layout = () => {
   return (
     <div className="app-container">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <Store size={28} />
-          <span>POS Pro</span>
-        </div>
-        
-        <nav className="flex-col w-full">
+      <main className="main-content">
+        <Outlet />
+      </main>
+
+      <div className="bottom-island-container">
+        <nav className="bottom-island glass">
           <NavLink 
             to="/" 
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
-            <LayoutDashboard size={20} />
-            Dashboard
+            <LayoutDashboard size={24} />
+            <span className="nav-label">Dashboard</span>
           </NavLink>
           <NavLink 
             to="/billing" 
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
-            <ShoppingCart size={20} />
-            Billing (POS)
+            <ShoppingCart size={24} />
+            <span className="nav-label">POS</span>
           </NavLink>
           <NavLink 
             to="/products" 
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
-            <Package size={20} />
-            Products
+            <Package size={24} />
+            <span className="nav-label">Products</span>
           </NavLink>
           <NavLink 
             to="/history" 
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
-            <ReceiptText size={20} />
-            History
+            <ReceiptText size={24} />
+            <span className="nav-label">History</span>
           </NavLink>
         </nav>
-      </aside>
-
-      <main className="main-content">
-        <Outlet />
-      </main>
+      </div>
     </div>
   );
 };
