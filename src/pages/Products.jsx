@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { subscribeToProducts, addProduct } from '../services/firebaseService';
 import { Plus, Package } from 'lucide-react';
+import BarcodeScanner from '../components/billing/BarcodeScanner';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -12,6 +13,7 @@ const Products = () => {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeToProducts((data) => {
@@ -71,14 +73,31 @@ const Products = () => {
             </div>
             <div className="input-group">
               <label className="input-label">Barcode</label>
-              <input 
-                type="text" 
-                className="input-field" 
-                value={barcode} 
-                onChange={(e) => setBarcode(e.target.value)} 
-                required 
-              />
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  className="input-field flex-1" 
+                  value={barcode} 
+                  onChange={(e) => setBarcode(e.target.value)} 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-ghost border border-border"
+                  onClick={() => setIsScanning(!isScanning)}
+                >
+                  {isScanning ? 'Cancel' : 'Scan'}
+                </button>
+              </div>
             </div>
+            {isScanning && (
+              <div className="mb-4">
+                <BarcodeScanner onScan={(scannedBarcode) => {
+                  setBarcode(scannedBarcode);
+                  setIsScanning(false);
+                }} />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="input-group">
                 <label className="input-label">Price (₹)</label>
