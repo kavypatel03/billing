@@ -244,7 +244,7 @@ tr:hover td {
 }
 
 .bottom-island-container {
-  position: absolute;
+  position: fixed;
   bottom: 24px;
   left: 0;
   right: 0;
